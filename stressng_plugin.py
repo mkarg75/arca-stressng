@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from datetime import _IsoCalendarDate
+#from datetime import _IsoCalendarDate
 import re
 import string
 import sys
@@ -182,10 +182,10 @@ def stressng_run(params: WorkloadParams) -> typing.Typle[str, typing.Union[Workl
     # run the stressng workload
     print("==>> Running the stressng workload")
     try:
-        print(subprocess.check_output(stressng_command, cwd=/tmp, text=True, stderr=subprocess.STDOUT))
+        print(subprocess.check_output(stressng_command, cwd="/tmp", text=True, stderr=subprocess.STDOUT))
     except subprocess.CalledProcessError as error:
         temp_cleanup("blabla.yml")
-        return "error", WorkloadError(f"{error.cmd[0] failed with return code {error.returncode}:\n{error.output} ")
+        return "error", WorkloadError(f"{error.cmd[0]} failed with return code {error.returncode}:\n{error.output} ")
 
 
 if __name__ == "__main__":
