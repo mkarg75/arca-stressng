@@ -89,7 +89,7 @@ class SystemInfoOutput:
     stress_ng_version: str = dataclasses.field(metadata={"id": "stress-ng-version"})
     run_by: str  = dataclasses.field(metadata={"id": "run-by"})
     date: str = dataclasses.field(metadata={"id": "date-yyyy-mm-dd"})
-    time: str = dataclasses.field(metdata={"id": "time-hh-mm-ss"})
+    time: str = dataclasses.field(metadata={"id": "time-hh-mm-ss"})
     epoch: int = dataclasses.field(metadata={"id": "epoch-secs"})
     hostname: str
     sysname: str
