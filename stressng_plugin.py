@@ -15,32 +15,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-#from datetime import _IsoCalendarDate
-import re
-import string
+# from datetime import _IsoCalendarDate
+# import re
+# import string
 import sys
 import typing
-import tempfile
-import yaml
-import json
+
+# import tempfile
+# import yaml
+# import json
 import subprocess
 import dataclasses
-import fileinput
-import os
-import shutil
-import csv
+
+# import fileinput
+# import os
+# import shutil
+# import csv
 from dataclasses import dataclass
-from typing import List
+
+# from typing import List
 from arcaflow_plugin_sdk import plugin
 from arcaflow_plugin_sdk import schema
-
 
 
 @dataclass
 class cpuStressorParams:
     """
-    The parameters for the CPU stressor 
+    The parameters for the CPU stressor
     """
+
     cpu_count: int
     cpu_method: typing.Optional[str] = "all"
 
@@ -52,6 +55,7 @@ class vmStressorParams:
     vm: number of virtual-memory stressors
     vm_bytes: amount of vm stressor memory
     """
+
     vm: int
     vm_bytes: str
     mmap: typing.Optional[str] = None
@@ -60,34 +64,39 @@ class vmStressorParams:
 
 @dataclass
 class StressNGParams:
-   """
-   The parameters in this schema will be passed through to the stressng command unchanged
-   """
-   # generic options
-   timeout: str 
-   items: typing.List[typing.Union[cpuStressorParams, vmStressorParams]]
-   verbose: typing.Optional[str] = None
-   metrics_brief: typing.Optional[str] = None
+    """
+    The parameters in this schema will be passed through to the stressng
+    command unchanged
+    """
 
+    # generic options
+    timeout: str
+    items: typing.List[typing.Union[cpuStressorParams, vmStressorParams]]
+    verbose: typing.Optional[str] = None
+    metrics_brief: typing.Optional[str] = None
 
 
 @dataclass
 class WorkloadParams:
-  """
-  This is the data structure for the input parameters of the step defined below
-  """
-  samples: int
-  StressNGParams: StressNGParams
-  cleanup: typing.Optional[str] = "True"
+    """
+    This is the data structure for the input parameters of the step
+    defined below
+    """
+
+    samples: int
+    StressNGParams: StressNGParams
+    cleanup: typing.Optional[str] = "True"
 
 
 @dataclass
 class SystemInfoOutput:
     """
-    This is the data structure that holds the generic info for the tested system
+    This is the data structure that holds the generic info for the
+    tested system
     """
+
     stress_ng_version: str = dataclasses.field(metadata={"id": "stress-ng-version"})
-    run_by: str  = dataclasses.field(metadata={"id": "run-by"})
+    run_by: str = dataclasses.field(metadata={"id": "run-by"})
     date: str = dataclasses.field(metadata={"id": "date-yyyy-mm-dd"})
     time: str = dataclasses.field(metadata={"id": "time-hh-mm-ss"})
     epoch: int = dataclasses.field(metadata={"id": "epoch-secs"})
@@ -109,19 +118,27 @@ class SystemInfoOutput:
     cpus_online: int = dataclasses.field(metadata={"id": "cpus-online"})
     ticks_per_second: int = dataclasses.field(metadata={"id": "ticks-per-second"})
 
+
 @dataclass
 class VMOutput:
     """
     This is the data structure that holds the results for the VM stressor
     """
+
     stressor: str
     bogo_ops: int = dataclasses.field(metadata={"id": "bogo-ops"})
-    bogo_ops_per_second_usr_sys_time: int = dataclasses.field(metadata={"id": "bogo-ops-per-second-usr-sys-time"})
-    bogo_ops_per_second_real_time: int = dataclaseses.field(metadata={"id": "bogo-ops-per-second-real-time"})
+    bogo_ops_per_second_usr_sys_time: int = dataclasses.field(
+        metadata={"id": "bogo-ops-per-second-usr-sys-time"}
+    )
+    bogo_ops_per_second_real_time: int = dataclasses.field(
+        metadata={"id": "bogo-ops-per-second-real-time"}
+    )
     wall_clock_time: float = dataclasses.field(metadata={"id": "wall-clock-time"})
     user_time: float = dataclasses.field(metadata={"id": "user-time"})
     system_time: float = dataclasses.field(metadata={"id": "system-time"})
-    cpu_usage_per_instance: float = dataclasses.field(metadata={"id": "cpu-usage-per-instance"})
+    cpu_usage_per_instance: float = dataclasses.field(
+        metadata={"id": "cpu-usage-per-instance"}
+    )
 
 
 @dataclass
@@ -129,32 +146,40 @@ class CPUOutput:
     """
     This is the data structure that holds the results for the CPU stressor
     """
+
     stressor: str
     bogo_ops: int = dataclasses.field(metadata={"id": "bogo-ops"})
-    bogo_ops_per_second_usr_sys_time: int = dataclasses.field(metadata={"id": "bogo-ops-per-second-usr-sys-time"})
-    bogo_ops_per_second_real_time: int = dataclaseses.field(metadata={"id": "bogo-ops-per-second-real-time"})
+    bogo_ops_per_second_usr_sys_time: int = dataclasses.field(
+        metadata={"id": "bogo-ops-per-second-usr-sys-time"}
+    )
+    bogo_ops_per_second_real_time: int = dataclasses.field(
+        metadata={"id": "bogo-ops-per-second-real-time"}
+    )
     wall_clock_time: float = dataclasses.field(metadata={"id": "wall-clock-time"})
     user_time: float = dataclasses.field(metadata={"id": "user-time"})
     system_time: float = dataclasses.field(metadata={"id": "system-time"})
-    cpu_usage_per_instance: float = dataclasses.field(metadata={"id": "cpu-usage-per-instance"})
+    cpu_usage_per_instance: float = dataclasses.field(
+        metadata={"id": "cpu-usage-per-instance"}
+    )
 
-  
 
 @dataclass
 class WorkloadResults:
     """
     This is the output data structure for the success case
     """
+
     systeminfo: SystemInfoOutput
     vminfo: VMOutput
     cpuinfo: CPUOutput
-    
+
 
 @dataclass
 class WorkloadError:
     """
     This is the output data structure for the failure case
     """
+
     error: str
 
 
@@ -165,11 +190,10 @@ class WorkloadError:
     description="Run the stress-ng workload with the given parameters",
     outputs={"success": WorkloadResults, "error": WorkloadError},
 )
-
-def stressng_run(params: WorkloadParams) -> typing.Typle[str, typing.Union[WorkloadResults, WorkloadError]]:
+def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[WorkloadResults, WorkloadError]]:
     """
     This function is implementing the step. It needs the decorator to turn it into a step. The type hints for the params are required.
-    
+
     :param params
 
     :return: the string identifying which output it is, as well as the output structure
@@ -183,14 +207,23 @@ def stressng_run(params: WorkloadParams) -> typing.Typle[str, typing.Union[Workl
     # run the stressng workload
     print("==>> Running the stressng workload")
     try:
-        print(subprocess.check_output(stressng_command, cwd="/tmp", text=True, stderr=subprocess.STDOUT))
+        print(
+            subprocess.check_output(
+                stressng_command, cwd="/tmp", text=True, stderr=subprocess.STDOUT
+            )
+        )
     except subprocess.CalledProcessError as error:
-        temp_cleanup("blabla.yml")
-        return "error", WorkloadError(f"{error.cmd[0]} failed with return code {error.returncode}:\n{error.output} ")
+        # temp_cleanup("blabla.yml")
+        return "error", WorkloadError(
+            f"{error.cmd[0]} failed with return code {error.returncode}:\n{error.output} "
+        )
 
 
 if __name__ == "__main__":
-    sys.exit(plugin.run(plugin.build_schema(
-        stressng_run,
-    )))
-        
+    sys.exit(
+        plugin.run(
+            plugin.build_schema(
+                stressng_run,
+            )
+        )
+    )
