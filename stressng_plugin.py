@@ -65,9 +65,10 @@ class StressNGParams:
    """
    # generic options
    timeout: str 
+   items: typing.List[typing.Union[cpuStressorParams, vmStressorParams]]
    verbose: typing.Optional[str] = None
    metrics_brief: typing.Optional[str] = None
-   items: typing.List[typing.Union[cpuStressorParams, vmStressorParams]]
+
 
 
 @dataclass
