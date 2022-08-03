@@ -2,7 +2,11 @@
 StressNGParams:
   timeout: 1m
   items:
-    - cpu_count: 2
-    - vm: 2
-    - vm_bytes: "2G"
-  
+    - stressor: cpu
+      cpu_count: 2
+      cpu_method: "all"
+    - stressor: vm
+      vm: 2
+      vm_bytes: "2G"
+
+    

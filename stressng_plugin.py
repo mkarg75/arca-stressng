@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""
-Copyright 2022 Marko Karg
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
 
 # from datetime import _IsoCalendarDate
 # import re
@@ -33,9 +19,11 @@ import dataclasses
 # import csv
 from dataclasses import dataclass
 
+
 # from typing import List
 from arcaflow_plugin_sdk import plugin
 from arcaflow_plugin_sdk import schema
+from arcaflow_plugin_sdk import annotations
 
 
 @dataclass
@@ -43,9 +31,10 @@ class cpuStressorParams:
     """
     The parameters for the CPU stressor
     """
-    discriminator: str
+    stressor: str
     cpu_count: int
     cpu_method: typing.Optional[str] = "all"
+
 
 
 @dataclass
@@ -55,7 +44,7 @@ class vmStressorParams:
     vm: number of virtual-memory stressors
     vm_bytes: amount of vm stressor memory
     """
-    discriminator: str
+    stressor: str
     vm: int
     vm_bytes: str
     mmap: typing.Optional[str] = None
@@ -71,7 +60,15 @@ class StressNGParams:
 
     # generic options
     timeout: str
-    items: typing.List[typing.Annotated[typing.Union[cpuStressorParams, vmStressorParams]], annotations.discriminator("stressor")]
+    items: typing.List[
+        typing.Annotated[
+            typing.Union[
+                typing.Annotated[cpuStressorParams, annotations.discriminator_value("cpu")],
+                typing.Annotated[vmStressorParams, annotations.discriminator_value("vm")]
+            ],
+            annotations.discriminator("stressor")
+        ]
+    ]
     verbose: typing.Optional[str] = None
     metrics_brief: typing.Optional[str] = None
 
