@@ -43,7 +43,7 @@ class cpuStressorParams:
     """
     The parameters for the CPU stressor
     """
-
+    discriminator: str
     cpu_count: int
     cpu_method: typing.Optional[str] = "all"
 
@@ -55,7 +55,7 @@ class vmStressorParams:
     vm: number of virtual-memory stressors
     vm_bytes: amount of vm stressor memory
     """
-
+    discriminator: str
     vm: int
     vm_bytes: str
     mmap: typing.Optional[str] = None
@@ -71,7 +71,7 @@ class StressNGParams:
 
     # generic options
     timeout: str
-    items: typing.List[typing.Union[cpuStressorParams, vmStressorParams]]
+    items: typing.List[typing.Annotated[typing.Union[cpuStressorParams, vmStressorParams]], annotations.discriminator("stressor")]
     verbose: typing.Optional[str] = None
     metrics_brief: typing.Optional[str] = None
 
@@ -82,8 +82,8 @@ class WorkloadParams:
     This is the data structure for the input parameters of the step
     defined below
     """
-
-    samples: int
+    "str",
+    # samples: int
     StressNGParams: StressNGParams
     cleanup: typing.Optional[str] = "True"
 
@@ -118,6 +118,7 @@ class SystemInfoOutput:
     cpus_online: int = dataclasses.field(metadata={"id": "cpus-online"})
     ticks_per_second: int = dataclasses.field(metadata={"id": "ticks-per-second"})
 
+system_output_results_schema = plugin.build_object_schema(SystemInfoOutput)
 
 @dataclass
 class VMOutput:
@@ -168,6 +169,7 @@ class WorkloadResults:
     """
     This is the output data structure for the success case
     """
+    discriminator: str
 
     systeminfo: SystemInfoOutput
     vminfo: VMOutput
@@ -190,7 +192,7 @@ class WorkloadError:
     description="Run the stress-ng workload with the given parameters",
     outputs={"success": WorkloadResults, "error": WorkloadError},
 )
-def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[WorkloadResults, WorkloadError]]:
+def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[WorkloadResults, WorkloadError], ]:
     """
     This function is implementing the step. It needs the decorator to turn it into a step. The type hints for the params are required.
 
@@ -200,9 +202,11 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
     """
 
     print("==>> Building the commandline to run")
-    stressng_command = [
-        f"stressng --cpu {params.cpu_count} --vm {params.vm} --vm-bytes {params.vm_bytes} --timeout {params.timeout} --metrics -Y /tmp/blabla.yml"
-    ]
+    #stressng_command = [
+    #    f"stressng --cpu {params.cpu_count} --vm {params.vm} --vm-bytes {params.vm_bytes} --timeout {params.timeout} --metrics -Y /tmp/blabla.yml"
+    #]
+    stressng_command = ["/usr/bin/stress-ng", "--cpu", str(params.cpu_count), "--vm", str(params.vm), "--vm_bytes", str(params.vm_bytes), "--timeout", str(params.timeout), "--metrics -Y /tmp/blabla.yml"]
+
 
     # run the stressng workload
     print("==>> Running the stressng workload")

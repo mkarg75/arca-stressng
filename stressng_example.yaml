@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=bla-schema.json
+StressNGParams:
+  timeout: 1m
+  items:
+    - cpu_count: 2
+    - vm: 2
+    - vm_bytes: "2G"
+  
