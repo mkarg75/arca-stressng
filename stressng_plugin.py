@@ -6,6 +6,7 @@
 # import string
 from imaplib import IMAP4_stream
 from os import system
+from stat import FILE_ATTRIBUTE_NO_SCRUB_DATA
 import sys
 import typing
 
@@ -143,7 +144,7 @@ class SystemInfoOutput:
     cpus_online: int = dataclasses.field(metadata={"id": "cpus-online"})
     ticks_per_second: int = dataclasses.field(metadata={"id": "ticks-per-second"})
 
-system_output_results_schema = plugin.build_object_schema(SystemInfoOutput)
+system_info_output_schema = plugin.build_object_schema(SystemInfoOutput)
 
 @dataclass
 class VMOutput:
@@ -153,10 +154,10 @@ class VMOutput:
 
     stressor: str
     bogo_ops: int = dataclasses.field(metadata={"id": "bogo-ops"})
-    bogo_ops_per_second_usr_sys_time: int = dataclasses.field(
+    bogo_ops_per_second_usr_sys_time: float = dataclasses.field(
         metadata={"id": "bogo-ops-per-second-usr-sys-time"}
     )
-    bogo_ops_per_second_real_time: int = dataclasses.field(
+    bogo_ops_per_second_real_time: float = dataclasses.field(
         metadata={"id": "bogo-ops-per-second-real-time"}
     )
     wall_clock_time: float = dataclasses.field(metadata={"id": "wall-clock-time"})
@@ -166,6 +167,7 @@ class VMOutput:
         metadata={"id": "cpu-usage-per-instance"}
     )
 
+vm_output_schema = plugin.build_object_schema(VMOutput)
 
 @dataclass
 class CPUOutput:
@@ -175,10 +177,10 @@ class CPUOutput:
 
     stressor: str
     bogo_ops: int = dataclasses.field(metadata={"id": "bogo-ops"})
-    bogo_ops_per_second_usr_sys_time: int = dataclasses.field(
+    bogo_ops_per_second_usr_sys_time: float = dataclasses.field(
         metadata={"id": "bogo-ops-per-second-usr-sys-time"}
     )
-    bogo_ops_per_second_real_time: int = dataclasses.field(
+    bogo_ops_per_second_real_time: float = dataclasses.field(
         metadata={"id": "bogo-ops-per-second-real-time"}
     )
     wall_clock_time: float = dataclasses.field(metadata={"id": "wall-clock-time"})
@@ -188,13 +190,14 @@ class CPUOutput:
         metadata={"id": "cpu-usage-per-instance"}
     )
 
+cpu_output_schema = plugin.build_object_schema(CPUOutput)
+
 
 @dataclass
 class WorkloadResults:
     """
     This is the output data structure for the success case
     """
-    discriminator: str
 
     systeminfo: SystemInfoOutput
     vminfo: typing.Optional[VMOutput] = None
@@ -258,14 +261,19 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
     metrics = (stressng_yaml['metrics'])
     print(type(metrics))
     for metric in metrics:
+        print("Current metric: ", metric)
+        print("stressor: ", metric['stressor'])
         if metric['stressor'] == "cpu":
             cpuinfo = metric
-        elif metric['stressor'] == "vm":
+            print("Returning cpuinfo object!")
+        if metric['stressor'] == "vm":
             vminfo = metric
+            print("Returning vminfo object!")
+
     
     print("==>> Workload run complete!")
 
-    return "success", WorkloadResults(system_info, cpuinfo, vminfo)    
+    return "success", WorkloadResults(system_info_output_schema.unserialize(system_info), cpu_output_schema.unserialize(cpuinfo), vm_output_schema.unserialize(vminfo))    
     
 
 if __name__ == "__main__":
