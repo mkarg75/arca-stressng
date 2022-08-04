@@ -5,12 +5,14 @@
 # import re
 # import string
 from imaplib import IMAP4_stream
+from os import system
 import sys
 import typing
 
-# import tempfile
+import tempfile
+from urllib.parse import _NetlocResultMixinBytes
 import yaml
-# import json
+import json
 import subprocess
 import dataclasses
 
@@ -36,12 +38,10 @@ class cpuStressorParams:
     cpu_count: int
     cpu_method: typing.Optional[str] = "all"
 
-    @classmethod
     def to_jobfile(self) -> str:
         result = "cpu {}\n".format(self.cpu_count)
         if self.cpu_method is not None:
             result = result + "cpu-method {}\n".format(self.cpu_method)
-            print(result)
         return result 
 
 
@@ -59,7 +59,6 @@ class vmStressorParams:
     mmap: typing.Optional[str] = None
     mmap_bytes: typing.Optional[str] = None
 
-    @classmethod
     def to_jobfile(self) -> str:
         vm = "vm {}\n".format(self.vm)
         vm_bytes = "vm-bytes {}\n".format(self.vm_bytes)
@@ -68,7 +67,6 @@ class vmStressorParams:
             result = result + "mmap {}\n".format(self.mmap)
         if self.mmap_bytes is not None:
             result = result + "mmap-bytes {}\n".format(mmap)
-        print(result)
         return result
         
            
@@ -94,7 +92,6 @@ class StressNGParams:
     verbose: typing.Optional[str] = None
     metrics_brief: typing.Optional[str] = None
 
-    @classmethod
     def to_jobfile(self) -> str:
         result = "timeout {}\n".format(self.timeout)
         if self.verbose is not None:
@@ -200,8 +197,8 @@ class WorkloadResults:
     discriminator: str
 
     systeminfo: SystemInfoOutput
-    vminfo: VMOutput
-    cpuinfo: CPUOutput
+    vminfo: typing.Optional[VMOutput] = None
+    cpuinfo: typing.Optional[CPUOutput] = None
 
 
 @dataclass
@@ -220,8 +217,8 @@ class WorkloadError:
     description="Run the stress-ng workload with the given parameters",
     outputs={"success": WorkloadResults, "error": WorkloadError},
 )
-#def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[WorkloadResults, WorkloadError], ]:
-def stressng_run(params: WorkloadParams) -> str:
+def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[WorkloadResults, WorkloadError], ]:
+#def stressng_run(params: WorkloadParams) -> str:
     """
     This function is implementing the step. It needs the decorator to turn it into a step. The type hints for the params are required.
 
@@ -230,35 +227,46 @@ def stressng_run(params: WorkloadParams) -> str:
     :return: the string identifying which output it is, as well as the output structure
     """
 
-    print("==>> Importing workload parameters...")
-    result = params.StressNGParams.items[0]
-    data = result.to_jobfile()
-    print(data)
-    #result = result + params.StressNGParams.items[1].to_jobfile
-    #print(result)
-     
-    #print("==>> Building the commandfile for stress-ng")
-    # looping over the stressng_example yaml
+    print("==>> Generating temporary jobfile...")
+    # generic parameters are in the StressNGParams class (e.g. the timeout)
+    result = params.StressNGParams.to_jobfile()
+    # now we need to iterate of the list of items
+    for item in params.StressNGParams.items:
+        result = result + item.to_jobfile()
+    
+    stressng_jobfile = tempfile.mkstemp()
+    stressng_outfile = tempfile.mkstemp()
 
-    #print("==>> Building the commandline to run")
-    #print(str(params.StressNGParams.items[0].stressor))
-    #stressng_command = ["/usr/bin/stress-ng", "--cpu", str(params.StressNGParams.items[0]cpu_count), "--vm", str(params.vm), "--vm-bytes", str(params.vm_bytes), "--timeout", str(params.timeout), "--metrics -Y /tmp/blabla.yml"]
+    # write the temporary jobfile
+    with open(stressng_jobfile[1], 'w') as jobfile:
+        jobfile.write(result)
+    stressng_command = ["/usr/bin/stress-ng", "-j", stressng_jobfile[1], "--metrics", "-Y", stressng_outfile[1]]
 
+    print("==>> Running stress-ng with the temporary jobfile...")  
+    try:
+        print(subprocess.check_output(stressng_command, cwd="/tmp", text=True, stderr=subprocess.STDOUT))
+    except subprocess.CalledProcessError as error:
+        return "error", WorkloadError(f"{error.cmd[0]} failed with return code {error.returncode}:\n{error.output}")    
+    
+    with open(stressng_outfile[1], 'r') as output:
+        try:
+            stressng_yaml = yaml.safe_load(output)
+        except yaml.YAMLError as e:
+            print(e)
+ 
+    system_info = (stressng_yaml['system-info'])
+    metrics = (stressng_yaml['metrics'])
+    print(type(metrics))
+    for metric in metrics:
+        if metric['stressor'] == "cpu":
+            cpuinfo = metric
+        elif metric['stressor'] == "vm":
+            vminfo = metric
+    
+    print("==>> Workload run complete!")
 
-    # run the stressng workload
-    #print("==>> Running the stressng workload")
-    #try:
-    #    print(
-    #        subprocess.check_output(
-    #            #stressng_command, cwd="/tmp", text=True, stderr=subprocess.STDOUT
-    #        )
-    #    )
-    #except subprocess.CalledProcessError as error:
-    #    # temp_cleanup("blabla.yml")
-    #    return "error", WorkloadError(
-    #        f"{error.cmd[0]} failed with return code {error.returncode}:\n{error.output} "
-    #    )
-    return "success"
+    return "success", WorkloadResults(system_info, cpuinfo, vminfo)    
+    
 
 if __name__ == "__main__":
     sys.exit(
