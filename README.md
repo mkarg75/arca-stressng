@@ -7,6 +7,9 @@ Define your paramaters in the YAML file to be passed to the plugin.
 
 ## To test
 
+### Prerequisites
+The plugin expects the stress-ng binary in `/usr/bin`, so if you have it installed in a different location, please create a symlink. 
+
 In order to run the [stressng plugin](stressng_plugin.py), run the following steps:
 
 1. Clone this repository
