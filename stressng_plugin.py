@@ -273,7 +273,7 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
     
     print("==>> Workload run complete!")
 
-    return "success", WorkloadResults(system_info_output_schema.unserialize(system_info), cpu_output_schema.unserialize(cpuinfo), vm_output_schema.unserialize(vminfo))    
+    return "success", WorkloadResults(system_info_output_schema.unserialize(system_info), vm_output_schema.unserialize(vminfo), cpu_output_schema.unserialize(cpuinfo))    
     
 
 if __name__ == "__main__":
