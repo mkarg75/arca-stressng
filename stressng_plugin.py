@@ -12,6 +12,7 @@ import typing
 
 import tempfile
 from urllib.parse import _NetlocResultMixinBytes
+from numpy import int0
 import yaml
 import json
 import subprocess
@@ -44,6 +45,54 @@ class cpuStressorParams:
         if self.cpu_method is not None:
             result = result + "cpu-method {}\n".format(self.cpu_method)
         return result 
+
+
+@dataclass
+class cpu_cacheStressorParams:
+    """
+    The parameters for the cpu cache stressor, 0 for the following options means 1 worker
+    doing the respective type of work:
+
+    bsearch: binary search worker
+    cache: random wide spread memory read and write
+    heapsort: sort 32 bit integers using BSD heapsort
+    hsearch: search a 80$ full has table using hsearch
+    icache: stress the instruction cache by forcing reloads
+    lockbus: rapidly lock and increment 64 bytes of randomly chosen memory
+    lsearch: linear search of unsorted array 
+    malloc: continuously call malloc, callc, realloc and free
+    matrix: perform various matrix operations
+    membarrier: exercise the membarrir system call (Linux only)
+    memcpy: copy 2MB of data from a shared region to a buffer
+    mergesort: sort 32 bit integers using BSD mergesort
+    qsort: sort 32 bit integers using qsort
+    str: exercise various libc string functions on random strings
+    stream: exercise memory bandwith stressor
+    tsearch: insert, search and delete 32 bit integers on a binary tree
+    vecmath: perform various unsinged integer math operations on 128 bit vectors
+    wcs: exercise various libc wide character string functions on random strings
+    zlib: compress and decompress randon data using zlig
+    """
+    stressor: str
+    bsearch: int
+    cache: int
+    heapsort: int
+    hsearch: int
+    icache: int
+    lockbus: int
+    lsearch: int
+    malloc: int
+    matrix: int
+    membarrier: int
+    memcpy: int
+    mergesort: int
+    qsort: int
+    str: int
+    stream: int
+    tsearch: int
+    vecmath: int
+    wcs: int
+    zlib: int
 
 
 
@@ -192,6 +241,30 @@ class CPUOutput:
 
 cpu_output_schema = plugin.build_object_schema(CPUOutput)
 
+@dataclass
+class CPUCacheOutput:
+    """
+    This is the data structure that holds the results for the CPU Cache stressor
+    """
+
+    stressor: str
+    bogo_ops: int = dataclasses.field(metadata={"id": "bogo-ops"})
+    bogo_ops_per_second_usr_sys_time: float = dataclasses.field(
+        metadata={"id": "bogo-ops-per-second-usr-sys-time"}
+    )
+    bogo_ops_per_second_real_time: float = dataclasses.field(
+        metadata={"id": "bogo-ops-per-second-real-time"}
+    )
+    wall_clock_time: float = dataclasses.field(metadata={"id": "wall-clock-time"})
+    user_time: float = dataclasses.field(metadata={"id": "user-time"})
+    system_time: float = dataclasses.field(metadata={"id": "system-time"})
+    cpu_usage_per_instance: float = dataclasses.field(
+        metadata={"id": "cpu-usage-per-instance"}
+    )
+
+cpucache_output_schema = plugin.build_object_schema(CPUCacheOutput)
+
+
 
 @dataclass
 class WorkloadResults:
@@ -202,6 +275,7 @@ class WorkloadResults:
     systeminfo: SystemInfoOutput
     vminfo: typing.Optional[VMOutput] = None
     cpuinfo: typing.Optional[CPUOutput] = None
+    #cpucacheinfo: typing.Optional[CPUCacheOutput] = None
 
 
 @dataclass
@@ -259,7 +333,11 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
  
     system_info = (stressng_yaml['system-info'])
     metrics = (stressng_yaml['metrics'])
-    print(type(metrics))
+    
+    cpuinfo = {}
+    vminfo = {}
+    cpucacheinfo = {}
+    
     for metric in metrics:
         print("Current metric: ", metric)
         print("stressor: ", metric['stressor'])
@@ -269,11 +347,13 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
         if metric['stressor'] == "vm":
             vminfo = metric
             print("Returning vminfo object!")
-
+        #if metric['stressor'] == "cpu-cache":
+        #    cpucacheinfo = metric
     
     print("==>> Workload run complete!")
 
-    return "success", WorkloadResults(system_info_output_schema.unserialize(system_info), vm_output_schema.unserialize(vminfo), cpu_output_schema.unserialize(cpuinfo))    
+    return "success", WorkloadResults(system_info_output_schema.unserialize(system_info), vm_output_schema.unserialize(vminfo), 
+    cpu_output_schema.unserialize(cpuinfo))    
     
 
 if __name__ == "__main__":
