@@ -108,6 +108,7 @@ class StressNGParams:
     command unchanged
     """
     timeout: str
+    cleanup: str
     items: typing.List[
         typing.Annotated[
             typing.Union[
@@ -304,8 +305,7 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
     with open(stressng_jobfile[1], 'w') as jobfile:
         jobfile.write(result)
     stressng_command = ["/usr/bin/stress-ng", "-j", stressng_jobfile[1], "--metrics", "-Y", stressng_outfile[1]]
-    print ("stressng_command: ", stressng_command)
-
+    
     print("==>> Running stress-ng with the temporary jobfile...")  
     try:
         print(subprocess.check_output(stressng_command, cwd="/tmp", text=True, stderr=subprocess.STDOUT))
@@ -339,8 +339,15 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
             mqinfo_un = mq_output_schema.unserialize(metric)
 
     print("==>> Workload run complete!")
-
+    os.close(stressng_jobfile)
+    os.close(stressng_outfile)
+    
     # TODO: if cleanup is set to true, remove the temporary files
+    if params.StressNGParams.cleanup == "True":
+        print("==>> Cleaning up operation files...")
+        os.remove(stressng_jobfile)
+        #os.remove(stressng_outfile)
+
 
     return "success", WorkloadResults(system_un, vminfo_un, cpuinfo_un, matrixinfo_un, mqinfo_un)
     
