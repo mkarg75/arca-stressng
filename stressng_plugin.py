@@ -4,10 +4,12 @@
 # from datetime import _IsoCalendarDate
 # import re
 # import string
+from asyncio import streams
 from imaplib import IMAP4_stream
 from os import system
 from stat import FILE_ATTRIBUTE_NO_SCRUB_DATA
 import sys
+from types import NoneType
 import typing
 
 import tempfile
@@ -48,55 +50,6 @@ class cpuStressorParams:
 
 
 @dataclass
-class cpu_cacheStressorParams:
-    """
-    The parameters for the cpu cache stressor, 0 for the following options means 1 worker
-    doing the respective type of work:
-
-    bsearch: binary search worker
-    cache: random wide spread memory read and write
-    heapsort: sort 32 bit integers using BSD heapsort
-    hsearch: search a 80$ full has table using hsearch
-    icache: stress the instruction cache by forcing reloads
-    lockbus: rapidly lock and increment 64 bytes of randomly chosen memory
-    lsearch: linear search of unsorted array 
-    malloc: continuously call malloc, callc, realloc and free
-    matrix: perform various matrix operations
-    membarrier: exercise the membarrir system call (Linux only)
-    memcpy: copy 2MB of data from a shared region to a buffer
-    mergesort: sort 32 bit integers using BSD mergesort
-    qsort: sort 32 bit integers using qsort
-    str: exercise various libc string functions on random strings
-    stream: exercise memory bandwith stressor
-    tsearch: insert, search and delete 32 bit integers on a binary tree
-    vecmath: perform various unsinged integer math operations on 128 bit vectors
-    wcs: exercise various libc wide character string functions on random strings
-    zlib: compress and decompress randon data using zlig
-    """
-    stressor: str
-    bsearch: int
-    cache: int
-    heapsort: int
-    hsearch: int
-    icache: int
-    lockbus: int
-    lsearch: int
-    malloc: int
-    matrix: int
-    membarrier: int
-    memcpy: int
-    mergesort: int
-    qsort: int
-    str: int
-    stream: int
-    tsearch: int
-    vecmath: int
-    wcs: int
-    zlib: int
-
-
-
-@dataclass
 class vmStressorParams:
     """
     The parameters for the vm (virtual memory) stressor
@@ -116,10 +69,37 @@ class vmStressorParams:
         if self.mmap is not None:
             result = result + "mmap {}\n".format(self.mmap)
         if self.mmap_bytes is not None:
-            result = result + "mmap-bytes {}\n".format(mmap)
+            result = result + "mmap-bytes {}\n".format(self.mmap_bytes)
         return result
-        
-           
+
+@dataclass
+class matrixStressorParams:
+    """ 
+    This is the data structure that holds the results for the Matrix stressor. 
+    This stressor is a good way to exercise the CPU floating point operations
+    as well as memory and processor data cache
+    """
+    stressor: str        
+    matrix: int
+
+    def to_jobfile(self) -> str:
+        matrix = "matrix {}\n".format(self.matrix)
+        result = matrix
+        return result
+
+@dataclass
+class mqStressorParams:
+    """
+    This is the data structure that holds the results for the MQ stressor 
+    """
+    stressor: str
+    mq: int
+    
+    def to_jobfile(self) -> str:
+        mq = "mq {}\n".format(self.mq)
+        result = mq
+        return result
+
 
 @dataclass
 class StressNGParams:
@@ -127,14 +107,14 @@ class StressNGParams:
     The parameters in this schema will be passed through to the stressng
     command unchanged
     """
-
-    # generic options
     timeout: str
     items: typing.List[
         typing.Annotated[
             typing.Union[
                 typing.Annotated[cpuStressorParams, annotations.discriminator_value("cpu")],
-                typing.Annotated[vmStressorParams, annotations.discriminator_value("vm")]
+                typing.Annotated[vmStressorParams, annotations.discriminator_value("vm")],
+                typing.Annotated[matrixStressorParams, annotations.discriminator_value("matrix")],
+                typing.Annotated[mqStressorParams, annotations.discriminator_value("mq")]
             ],
             annotations.discriminator("stressor")
         ]
@@ -157,8 +137,6 @@ class WorkloadParams:
     This is the data structure for the input parameters of the step
     defined below
     """
-    "str",
-    # samples: int
     StressNGParams: StressNGParams
     cleanup: typing.Optional[str] = "True"
 
@@ -169,7 +147,6 @@ class SystemInfoOutput:
     This is the data structure that holds the generic info for the
     tested system
     """
-
     stress_ng_version: str = dataclasses.field(metadata={"id": "stress-ng-version"})
     run_by: str = dataclasses.field(metadata={"id": "run-by"})
     date: str = dataclasses.field(metadata={"id": "date-yyyy-mm-dd"})
@@ -200,7 +177,6 @@ class VMOutput:
     """
     This is the data structure that holds the results for the VM stressor
     """
-
     stressor: str
     bogo_ops: int = dataclasses.field(metadata={"id": "bogo-ops"})
     bogo_ops_per_second_usr_sys_time: float = dataclasses.field(
@@ -223,7 +199,6 @@ class CPUOutput:
     """
     This is the data structure that holds the results for the CPU stressor
     """
-
     stressor: str
     bogo_ops: int = dataclasses.field(metadata={"id": "bogo-ops"})
     bogo_ops_per_second_usr_sys_time: float = dataclasses.field(
@@ -242,19 +217,14 @@ class CPUOutput:
 cpu_output_schema = plugin.build_object_schema(CPUOutput)
 
 @dataclass
-class CPUCacheOutput:
+class MatrixOutput:
     """
-    This is the data structure that holds the results for the CPU Cache stressor
+    This is the data structure that holds the results for the Matrix stressor
     """
-
     stressor: str
     bogo_ops: int = dataclasses.field(metadata={"id": "bogo-ops"})
-    bogo_ops_per_second_usr_sys_time: float = dataclasses.field(
-        metadata={"id": "bogo-ops-per-second-usr-sys-time"}
-    )
-    bogo_ops_per_second_real_time: float = dataclasses.field(
-        metadata={"id": "bogo-ops-per-second-real-time"}
-    )
+    bogo_ops_per_second_usr_sys_time: float = dataclasses.field(metadata={"id": "bogo-ops-per-second-usr-sys-time"})
+    bogo_ops_per_second_real_time: float = dataclasses.field(metadata={"id": "bogo-ops-per-second-real-time"})
     wall_clock_time: float = dataclasses.field(metadata={"id": "wall-clock-time"})
     user_time: float = dataclasses.field(metadata={"id": "user-time"})
     system_time: float = dataclasses.field(metadata={"id": "system-time"})
@@ -262,8 +232,25 @@ class CPUCacheOutput:
         metadata={"id": "cpu-usage-per-instance"}
     )
 
-cpucache_output_schema = plugin.build_object_schema(CPUCacheOutput)
+matrix_output_schema = plugin.build_object_schema(MatrixOutput)
 
+@dataclass
+class MQOutput:
+    """
+    This is the data structure that holds the results for the MQ stressor
+    """
+    stressor: str
+    bogo_ops: int = dataclasses.field(metadata={"id": "bogo-ops"})
+    bogo_ops_per_second_usr_sys_time: float = dataclasses.field(metadata={"id": "bogo-ops-per-second-usr-sys-time"})
+    bogo_ops_per_second_real_time: float = dataclasses.field(metadata={"id": "bogo-ops-per-second-real-time"})
+    wall_clock_time: float = dataclasses.field(metadata={"id": "wall-clock-time"})
+    user_time: float = dataclasses.field(metadata={"id": "user-time"})
+    system_time: float = dataclasses.field(metadata={"id": "system-time"})
+    cpu_usage_per_instance: float = dataclasses.field(
+        metadata={"id": "cpu-usage-per-instance"}
+    )
+
+mq_output_schema = plugin.build_object_schema(MQOutput)
 
 
 @dataclass
@@ -271,11 +258,11 @@ class WorkloadResults:
     """
     This is the output data structure for the success case
     """
-
     systeminfo: SystemInfoOutput
     vminfo: typing.Optional[VMOutput] = None
     cpuinfo: typing.Optional[CPUOutput] = None
-    #cpucacheinfo: typing.Optional[CPUCacheOutput] = None
+    matrixinfo: typing.Optional[MatrixOutput] = None
+    mqinfo: typing.Optional[MQOutput] = None
 
 
 @dataclass
@@ -283,7 +270,6 @@ class WorkloadError:
     """
     This is the output data structure for the failure case
     """
-
     error: str
 
 
@@ -318,6 +304,7 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
     with open(stressng_jobfile[1], 'w') as jobfile:
         jobfile.write(result)
     stressng_command = ["/usr/bin/stress-ng", "-j", stressng_jobfile[1], "--metrics", "-Y", stressng_outfile[1]]
+    print ("stressng_command: ", stressng_command)
 
     print("==>> Running stress-ng with the temporary jobfile...")  
     try:
@@ -333,27 +320,29 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
  
     system_info = (stressng_yaml['system-info'])
     metrics = (stressng_yaml['metrics'])
-    
-    cpuinfo = {}
-    vminfo = {}
-    cpucacheinfo = {}
-    
+
+    # allocate all stressor information with None in case they don't get called
+    cpuinfo_un = None
+    vminfo_un = None
+    matrixinfo_un = None
+    mqinfo_un = None    
+
+    system_un = system_info_output_schema.unserialize(system_info)
     for metric in metrics:
-        print("Current metric: ", metric)
-        print("stressor: ", metric['stressor'])
         if metric['stressor'] == "cpu":
-            cpuinfo = metric
-            print("Returning cpuinfo object!")
+            cpuinfo_un = cpu_output_schema.unserialize(metric)
         if metric['stressor'] == "vm":
-            vminfo = metric
-            print("Returning vminfo object!")
-        #if metric['stressor'] == "cpu-cache":
-        #    cpucacheinfo = metric
-    
+            vminfo_un = vm_output_schema.unserialize(metric)
+        if metric['stressor'] == "matrix":
+            matrixinfo_un = matrix_output_schema.unserialize(metric)
+        if metric['stressor'] == "mq":
+            mqinfo_un = mq_output_schema.unserialize(metric)
+
     print("==>> Workload run complete!")
 
-    return "success", WorkloadResults(system_info_output_schema.unserialize(system_info), vm_output_schema.unserialize(vminfo), 
-    cpu_output_schema.unserialize(cpuinfo))    
+    # TODO: if cleanup is set to true, remove the temporary files
+
+    return "success", WorkloadResults(system_un, vminfo_un, cpuinfo_un, matrixinfo_un, mqinfo_un)
     
 
 if __name__ == "__main__":

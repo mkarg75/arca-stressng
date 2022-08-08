@@ -5,3 +5,10 @@ StressNGParams:
     - stressor: cpu
       cpu_count: 2
       cpu_method: "all"
+    - stressor: vm
+      vm: 2
+      vm_bytes: "2G"
+    - stressor: matrix
+      matrix: 1
+    - stressor: mq
+      mq: 2
