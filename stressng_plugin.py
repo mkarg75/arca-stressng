@@ -21,7 +21,7 @@ import subprocess
 import dataclasses
 
 # import fileinput
-# import os
+import os
 # import shutil
 # import csv
 from dataclasses import dataclass
@@ -339,13 +339,13 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
             mqinfo_un = mq_output_schema.unserialize(metric)
 
     print("==>> Workload run complete!")
-    os.close(stressng_jobfile)
-    os.close(stressng_outfile)
+    os.close(stressng_jobfile[0])
+    os.close(stressng_outfile[0])
     
     # TODO: if cleanup is set to true, remove the temporary files
     if params.StressNGParams.cleanup == "True":
         print("==>> Cleaning up operation files...")
-        os.remove(stressng_jobfile)
+        os.remove(stressng_jobfile[0])
         #os.remove(stressng_outfile)
 
 
