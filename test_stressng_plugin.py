@@ -3,6 +3,8 @@
 import re
 import tempfile
 import unittest
+import yaml
+from filecmp import cmp
 import stressng_plugin
 from arcaflow_plugin_sdk import plugin
 
@@ -51,7 +53,7 @@ class StressNGTest(unittest.TestCase):
         )
 
         stress = stressng_plugin.StressNGParams(
-            timeout="1m",
+            timeout="99m",
             cleanup="False",
             items=[cpu]
         )
@@ -62,20 +64,22 @@ class StressNGTest(unittest.TestCase):
         )
 
         stressng_jobfile = tempfile.mkstemp()
-        reference_jobfile = "./test_cpu.yaml"
+        reference_jobfile = "./reference_jobfile"
 
-        result = stressng_plugin.StressNGParams.to_jobfile()
-        for item in stressng_plugin.StressNGParams.items:
+        result = stress.to_jobfile()
+    
+        for item in stress.items:
             result = result + item.to_jobfile()
-            # write the temporary jobfile
-        
-        with open(stressng_jobfile[1], 'w') as jobfile:
-            jobfile.write(result)
+     
+        with open(reference_jobfile, 'r') as file:
+            try:
+                reference = yaml.safe_load(file)
+            except yaml.YAMLError as e:
+                print(e)
 
-        # next - compare the jobfile with the reference file
+        self.assertEqual(yaml.safe_load(result), reference)
 
+    # TODO: Create a test for the actual output of stressng.
 
-
-        
 if __name__ == '__main__':
     unittest.main()
