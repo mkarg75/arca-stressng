@@ -63,7 +63,6 @@ class StressNGTest(unittest.TestCase):
             cleanup="False"
         )
 
-        stressng_jobfile = tempfile.mkstemp()
         reference_jobfile = "./reference_jobfile"
 
         result = stress.to_jobfile()

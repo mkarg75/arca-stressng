@@ -1,4 +1,4 @@
-tressng workload plugin for Arcaflow
+# Stressng workload plugin for Arcaflow
 
 arca-stressng is a workload plugin for the [stressng](https://github.com/ColinIanKing/stress-ng) benchmark tool. It is using the [Arcaflow python SDK](https://github.com/arcalot/arcaflow-plugin-sdk-python).
 
