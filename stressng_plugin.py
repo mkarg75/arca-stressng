@@ -329,7 +329,7 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
     # TODO: if cleanup is set to true, remove the temporary files
     if params.StressNGParams.cleanup == "True":
         print("==>> Cleaning up operation files...")
-        os.remove(stressng_jobfile[0])
+        os.remove(stressng_jobfile[1])
         #os.remove(stressng_outfile)
 
 
