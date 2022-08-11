@@ -18,6 +18,14 @@ from arcaflow_plugin_sdk import annotations
 
 
 @dataclass
+class Stressors(enum.Enum):
+    CPU="cpu"
+    VM="vm"
+    MATRIX="matrix"
+    MQ="mq"
+
+
+@dataclass
 class cpuStressorParams:
     """
     The parameters for the CPU stressor
@@ -92,7 +100,7 @@ class StressNGParams:
     command unchanged
     """
     timeout: str
-    cleanup: str
+    cleanup: bool
     items: typing.List[
         typing.Annotated[
             typing.Union[
@@ -104,8 +112,8 @@ class StressNGParams:
             annotations.discriminator("stressor")
         ]
     ]
-    verbose: typing.Optional[str] = None
-    metrics_brief: typing.Optional[str] = None
+    verbose: typing.Optional[bool] = None
+    metrics_brief: typing.Optional[bool] = None
 
     def to_jobfile(self) -> str:
         result = "timeout {}\n".format(self.timeout)
@@ -327,7 +335,7 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
     os.close(stressng_outfile[0])
     
     # TODO: if cleanup is set to true, remove the temporary files
-    if params.StressNGParams.cleanup == "True":
+    if params.StressNGParams.cleanup == True:
         print("==>> Cleaning up operation files...")
         os.remove(stressng_jobfile[1])
         #os.remove(stressng_outfile)
