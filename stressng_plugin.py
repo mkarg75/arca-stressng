@@ -9,6 +9,7 @@ import yaml
 import json
 import subprocess
 import os
+import enum
 import dataclasses
 from dataclasses import dataclass
 
@@ -17,7 +18,7 @@ from arcaflow_plugin_sdk import schema
 from arcaflow_plugin_sdk import annotations
 
 
-@dataclass
+
 class Stressors(enum.Enum):
     CPU="cpu"
     VM="vm"
