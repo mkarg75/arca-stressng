@@ -39,11 +39,10 @@ class StressNGTest(unittest.TestCase):
                 mq=2
             )
         )
-   
-        
+
     def test_functional_cpu(self):
         # idea is to run a small cpu bound benchmark and compare its output with a known-good output
-        # this is clearly not perfect, as we're limited to the field names and can't do a direct 
+        # this is clearly not perfect, as we're limited to the field names and can't do a direct
         # comparison of the returned values
 
         cpu = stressng_plugin.cpuStressorParams(
@@ -66,10 +65,10 @@ class StressNGTest(unittest.TestCase):
         reference_jobfile = "./reference_jobfile"
 
         result = stress.to_jobfile()
-    
+
         for item in stress.items:
             result = result + item.to_jobfile()
-     
+
         with open(reference_jobfile, 'r') as file:
             try:
                 reference = yaml.safe_load(file)
@@ -79,6 +78,7 @@ class StressNGTest(unittest.TestCase):
         self.assertEqual(yaml.safe_load(result), reference)
 
     # TODO: Create a test for the actual output of stressng.
+
 
 if __name__ == '__main__':
     unittest.main()

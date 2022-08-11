@@ -9,7 +9,7 @@ import yaml
 import json
 import subprocess
 import os
-import enum
+import enumn
 import dataclasses
 from dataclasses import dataclass
 
@@ -18,12 +18,11 @@ from arcaflow_plugin_sdk import schema
 from arcaflow_plugin_sdk import annotations
 
 
-
 class Stressors(enum.Enum):
-    CPU="cpu"
-    VM="vm"
-    MATRIX="matrix"
-    MQ="mq"
+    CPU = "cpu"
+    VM = "vm"
+    MATRIX = "matrix"
+    MQ = "mq"
 
 
 @dataclass
@@ -39,7 +38,7 @@ class cpuStressorParams:
         result = "cpu {}\n".format(self.cpu_count)
         if self.cpu_method is not None:
             result = result + "cpu-method {}\n".format(self.cpu_method)
-        return result 
+        return result
 
 
 @dataclass
@@ -65,6 +64,7 @@ class vmStressorParams:
             result = result + "mmap-bytes {}\n".format(self.mmap_bytes)
         return result
 
+
 @dataclass
 class matrixStressorParams:
     """ 
@@ -72,13 +72,14 @@ class matrixStressorParams:
     This stressor is a good way to exercise the CPU floating point operations
     as well as memory and processor data cache
     """
-    stressor: str        
+    stressor: str
     matrix: int
 
     def to_jobfile(self) -> str:
         matrix = "matrix {}\n".format(self.matrix)
         result = matrix
         return result
+
 
 @dataclass
 class mqStressorParams:
@@ -87,7 +88,7 @@ class mqStressorParams:
     """
     stressor: str
     mq: int
-    
+
     def to_jobfile(self) -> str:
         mq = "mq {}\n".format(self.mq)
         result = mq
@@ -105,10 +106,14 @@ class StressNGParams:
     items: typing.List[
         typing.Annotated[
             typing.Union[
-                typing.Annotated[cpuStressorParams, annotations.discriminator_value("cpu")],
-                typing.Annotated[vmStressorParams, annotations.discriminator_value("vm")],
-                typing.Annotated[matrixStressorParams, annotations.discriminator_value("matrix")],
-                typing.Annotated[mqStressorParams, annotations.discriminator_value("mq")]
+                typing.Annotated[cpuStressorParams,
+                                 annotations.discriminator_value("cpu")],
+                typing.Annotated[vmStressorParams,
+                                 annotations.discriminator_value("vm")],
+                typing.Annotated[matrixStressorParams,
+                                 annotations.discriminator_value("matrix")],
+                typing.Annotated[mqStressorParams,
+                                 annotations.discriminator_value("mq")]
             ],
             annotations.discriminator("stressor")
         ]
@@ -141,7 +146,8 @@ class SystemInfoOutput:
     This is the data structure that holds the generic info for the
     tested system
     """
-    stress_ng_version: str = dataclasses.field(metadata={"id": "stress-ng-version"})
+    stress_ng_version: str = dataclasses.field(
+        metadata={"id": "stress-ng-version"})
     run_by: str = dataclasses.field(metadata={"id": "run-by"})
     date: str = dataclasses.field(metadata={"id": "date-yyyy-mm-dd"})
     time: str = dataclasses.field(metadata={"id": "time-hh-mm-ss"})
@@ -162,9 +168,12 @@ class SystemInfoOutput:
     pagesize: int
     cpus: int
     cpus_online: int = dataclasses.field(metadata={"id": "cpus-online"})
-    ticks_per_second: int = dataclasses.field(metadata={"id": "ticks-per-second"})
+    ticks_per_second: int = dataclasses.field(
+        metadata={"id": "ticks-per-second"})
+
 
 system_info_output_schema = plugin.build_object_schema(SystemInfoOutput)
+
 
 @dataclass
 class VMOutput:
@@ -179,14 +188,17 @@ class VMOutput:
     bogo_ops_per_second_real_time: float = dataclasses.field(
         metadata={"id": "bogo-ops-per-second-real-time"}
     )
-    wall_clock_time: float = dataclasses.field(metadata={"id": "wall-clock-time"})
+    wall_clock_time: float = dataclasses.field(
+        metadata={"id": "wall-clock-time"})
     user_time: float = dataclasses.field(metadata={"id": "user-time"})
     system_time: float = dataclasses.field(metadata={"id": "system-time"})
     cpu_usage_per_instance: float = dataclasses.field(
         metadata={"id": "cpu-usage-per-instance"}
     )
 
+
 vm_output_schema = plugin.build_object_schema(VMOutput)
+
 
 @dataclass
 class CPUOutput:
@@ -201,14 +213,17 @@ class CPUOutput:
     bogo_ops_per_second_real_time: float = dataclasses.field(
         metadata={"id": "bogo-ops-per-second-real-time"}
     )
-    wall_clock_time: float = dataclasses.field(metadata={"id": "wall-clock-time"})
+    wall_clock_time: float = dataclasses.field(
+        metadata={"id": "wall-clock-time"})
     user_time: float = dataclasses.field(metadata={"id": "user-time"})
     system_time: float = dataclasses.field(metadata={"id": "system-time"})
     cpu_usage_per_instance: float = dataclasses.field(
         metadata={"id": "cpu-usage-per-instance"}
     )
 
+
 cpu_output_schema = plugin.build_object_schema(CPUOutput)
+
 
 @dataclass
 class MatrixOutput:
@@ -217,16 +232,21 @@ class MatrixOutput:
     """
     stressor: str
     bogo_ops: int = dataclasses.field(metadata={"id": "bogo-ops"})
-    bogo_ops_per_second_usr_sys_time: float = dataclasses.field(metadata={"id": "bogo-ops-per-second-usr-sys-time"})
-    bogo_ops_per_second_real_time: float = dataclasses.field(metadata={"id": "bogo-ops-per-second-real-time"})
-    wall_clock_time: float = dataclasses.field(metadata={"id": "wall-clock-time"})
+    bogo_ops_per_second_usr_sys_time: float = dataclasses.field(
+        metadata={"id": "bogo-ops-per-second-usr-sys-time"})
+    bogo_ops_per_second_real_time: float = dataclasses.field(
+        metadata={"id": "bogo-ops-per-second-real-time"})
+    wall_clock_time: float = dataclasses.field(
+        metadata={"id": "wall-clock-time"})
     user_time: float = dataclasses.field(metadata={"id": "user-time"})
     system_time: float = dataclasses.field(metadata={"id": "system-time"})
     cpu_usage_per_instance: float = dataclasses.field(
         metadata={"id": "cpu-usage-per-instance"}
     )
 
+
 matrix_output_schema = plugin.build_object_schema(MatrixOutput)
+
 
 @dataclass
 class MQOutput:
@@ -235,14 +255,18 @@ class MQOutput:
     """
     stressor: str
     bogo_ops: int = dataclasses.field(metadata={"id": "bogo-ops"})
-    bogo_ops_per_second_usr_sys_time: float = dataclasses.field(metadata={"id": "bogo-ops-per-second-usr-sys-time"})
-    bogo_ops_per_second_real_time: float = dataclasses.field(metadata={"id": "bogo-ops-per-second-real-time"})
-    wall_clock_time: float = dataclasses.field(metadata={"id": "wall-clock-time"})
+    bogo_ops_per_second_usr_sys_time: float = dataclasses.field(
+        metadata={"id": "bogo-ops-per-second-usr-sys-time"})
+    bogo_ops_per_second_real_time: float = dataclasses.field(
+        metadata={"id": "bogo-ops-per-second-real-time"})
+    wall_clock_time: float = dataclasses.field(
+        metadata={"id": "wall-clock-time"})
     user_time: float = dataclasses.field(metadata={"id": "user-time"})
     system_time: float = dataclasses.field(metadata={"id": "system-time"})
     cpu_usage_per_instance: float = dataclasses.field(
         metadata={"id": "cpu-usage-per-instance"}
     )
+
 
 mq_output_schema = plugin.build_object_schema(MQOutput)
 
@@ -275,7 +299,7 @@ class WorkloadError:
     outputs={"success": WorkloadResults, "error": WorkloadError},
 )
 def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[WorkloadResults, WorkloadError], ]:
-#def stressng_run(params: WorkloadParams) -> str:
+    # def stressng_run(params: WorkloadParams) -> str:
     """
     This function is implementing the step. It needs the decorator to turn it into a step. The type hints for the params are required.
 
@@ -290,27 +314,29 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
     # now we need to iterate of the list of items
     for item in params.StressNGParams.items:
         result = result + item.to_jobfile()
-    
+
     stressng_jobfile = tempfile.mkstemp()
     stressng_outfile = tempfile.mkstemp()
 
     # write the temporary jobfile
     with open(stressng_jobfile[1], 'w') as jobfile:
         jobfile.write(result)
-    stressng_command = ["/usr/bin/stress-ng", "-j", stressng_jobfile[1], "--metrics", "-Y", stressng_outfile[1]]
-    
-    print("==>> Running stress-ng with the temporary jobfile...")  
+    stressng_command = ["/usr/bin/stress-ng", "-j",
+                        stressng_jobfile[1], "--metrics", "-Y", stressng_outfile[1]]
+
+    print("==>> Running stress-ng with the temporary jobfile...")
     try:
-        print(subprocess.check_output(stressng_command, cwd="/tmp", text=True, stderr=subprocess.STDOUT))
+        print(subprocess.check_output(stressng_command,
+              cwd="/tmp", text=True, stderr=subprocess.STDOUT))
     except subprocess.CalledProcessError as error:
-        return "error", WorkloadError(f"{error.cmd[0]} failed with return code {error.returncode}:\n{error.output}")    
-    
+        return "error", WorkloadError(f"{error.cmd[0]} failed with return code {error.returncode}:\n{error.output}")
+
     with open(stressng_outfile[1], 'r') as output:
         try:
             stressng_yaml = yaml.safe_load(output)
         except yaml.YAMLError as e:
             print(e)
- 
+
     system_info = (stressng_yaml['system-info'])
     metrics = (stressng_yaml['metrics'])
 
@@ -318,7 +344,7 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
     cpuinfo_un = None
     vminfo_un = None
     matrixinfo_un = None
-    mqinfo_un = None    
+    mqinfo_un = None
 
     system_un = system_info_output_schema.unserialize(system_info)
     for metric in metrics:
@@ -334,16 +360,15 @@ def stressng_run(params: WorkloadParams) -> typing.Tuple[str, typing.Union[Workl
     print("==>> Workload run complete!")
     os.close(stressng_jobfile[0])
     os.close(stressng_outfile[0])
-    
+
     # TODO: if cleanup is set to true, remove the temporary files
     if params.StressNGParams.cleanup == True:
         print("==>> Cleaning up operation files...")
         os.remove(stressng_jobfile[1])
-        #os.remove(stressng_outfile)
-
+        # os.remove(stressng_outfile)
 
     return "success", WorkloadResults(system_un, vminfo_un, cpuinfo_un, matrixinfo_un, mqinfo_un)
-    
+
 
 if __name__ == "__main__":
     sys.exit(
